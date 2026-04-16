@@ -194,6 +194,29 @@ async function fetchOrdersFromSupabase() {
 
 // --- UI RENDERING LOGIC ---
 
+async function updateOrderStatus(orderId, currentStatus) {
+    let nextStatus = 'new';
+    if (currentStatus === 'new') nextStatus = 'preparing';
+    else if (currentStatus === 'preparing') nextStatus = 'ready';
+    else if (currentStatus === 'ready') nextStatus = 'done';
+    
+    if (nextStatus === currentStatus) return;
+
+    // Call Supabase update
+    const { error } = await supabaseClient
+        .from('orders')
+        .update({ status: nextStatus })
+        .eq('id', orderId);
+        
+    if (error) {
+        console.error("Error updating status:", error);
+        alert("Failed to update status. Please make sure you have UPDATE permissions in Supabase Policies.");
+    } else {
+        // Refresh data after successful update
+        fetchOrdersFromSupabase();
+    }
+}
+
 function calculateTimeAgo(dateString) {
     const past = new Date(dateString);
     const now = new Date();
@@ -275,10 +298,12 @@ function renderOrders(ordersData) {
         btn.classList.add(statusDetails.btnClass);
         btn.innerHTML = `<i data-lucide="${statusDetails.icon}"></i> ${statusDetails.btnLabel}`;
         
-        // Mock Interaction
-        btn.addEventListener('click', () => {
-            alert(`Changing status for ${order.roomNumber}`);
-            // In real app, call Supabase update function here
+        // Actual Database Interaction
+        btn.addEventListener('click', (event) => {
+            // Give immediate visual feedback by disabling the button and changing text
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> UPDATING...`;
+            updateOrderStatus(order.id, order.status, event);
         });
 
         container.appendChild(cardClone);
