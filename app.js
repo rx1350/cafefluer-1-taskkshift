@@ -172,6 +172,8 @@ async function fetchOrdersFromSupabase() {
             return {
                 id: dbOrder.id,
                 roomNumber: dbOrder.room_number || dbOrder.roomNumber || 'Unknown Room',
+                phone: dbOrder.phone || '',
+                notes: dbOrder.notes || '',
                 status: dbOrder.status || 'new',
                 createdAt: dbOrder.created_at,
                 date: dateStr,
@@ -270,6 +272,19 @@ function renderOrders(ordersData) {
         
         // Header
         cardClone.querySelector('.room-number').textContent = order.roomNumber;
+        
+        const phoneEl = cardClone.querySelector('.customer-phone');
+        if (order.phone) {
+            phoneEl.textContent = `📞 ${order.phone}`;
+            phoneEl.style.display = 'block';
+        }
+
+        const notesEl = cardClone.querySelector('.order-notes');
+        if (order.notes) {
+            notesEl.textContent = `Special request: "${order.notes}"`;
+            notesEl.style.display = 'block';
+        }
+
         const statusBadge = cardClone.querySelector('.status-badge');
         statusBadge.textContent = statusDetails.label;
         statusBadge.classList.add(order.status);

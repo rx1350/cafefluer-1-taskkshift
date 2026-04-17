@@ -276,10 +276,14 @@
     <template id="order-card-template">
         <article class="order-card">
             <div class="card-header">
-                <h4 class="room-number"></h4>
+                <div>
+                    <h4 class="room-number"></h4>
+                    <span class="customer-phone" style="font-size: 13px; color: var(--text-muted); margin-top: 2px; display: none;"></span>
+                </div>
                 <span class="status-badge"></span>
             </div>
             <p class="time-ago"></p>
+            <p class="order-notes" style="font-size: 13px; color: var(--cafe-gold); background: #fdfaf6; padding: 6px 10px; border-radius: 4px; margin-bottom: 12px; font-style: italic; display: none;"></p>
 
             <ul class="order-items">
                 <!-- Items injected here -->
