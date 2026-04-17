@@ -373,7 +373,6 @@ function setupNavigation() {
         sectionLive.style.display = 'none';
         sectionSettings.style.display = 'none';
         document.getElementById('main-page-title').textContent = 'Conservatory Dashboard';
-        renderHistory(MOCK_HISTORY); // Render history lazily or refresh
     });
     
     navSettings.addEventListener('click', (e) => {
