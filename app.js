@@ -285,13 +285,13 @@ function renderOrders(ordersData) {
             const itemClone = itemTemplate.content.cloneNode(true);
             itemClone.querySelector('.item-name').textContent = item.name;
             itemClone.querySelector('.item-qty').textContent = `x${item.qty}`;
-            itemClone.querySelector('.item-price').textContent = `$${item.price.toFixed(2)}`;
+            itemClone.querySelector('.item-price').textContent = `₹${item.price.toFixed(2)}`;
             itemsList.appendChild(itemClone);
             totalVal += item.price;
         });
 
         // Total
-        cardClone.querySelector('.total-amount').textContent = `$${totalVal.toFixed(2)}`;
+        cardClone.querySelector('.total-amount').textContent = `₹${totalVal.toFixed(2)}`;
 
         // Button
         const btn = cardClone.querySelector('.action-btn');
@@ -335,7 +335,7 @@ function renderHistory(historyData) {
         const itemsHtml = row.items.map(i => `${i.qty}x ${i.name}`).join('<br>');
         clone.querySelector('.col-items').innerHTML = itemsHtml;
         
-        clone.querySelector('.col-total').textContent = `$${row.total.toFixed(2)}`;
+        clone.querySelector('.col-total').textContent = `₹${row.total.toFixed(2)}`;
         
         const badge = clone.querySelector('.badge');
         badge.textContent = row.status.toUpperCase();
@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set up an interval to refresh data from Supabase
         setInterval(() => {
             fetchOrdersFromSupabase();
-        }, 60000); // refresh every minute
+        }, 5000); // refresh every 5 seconds
     } catch(err) {
         console.error("Initialization error:", err);
         alert("There was an error initializing the dashboard: " + err.message);
