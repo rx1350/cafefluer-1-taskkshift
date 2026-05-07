@@ -28,7 +28,7 @@ const MOCK_ORDERS = [
     {
         id: 'ord_3',
         roomNumber: 'Penthouse B',
-        status: 'ready',
+        status: 'preparing',
         createdAt: new Date(Date.now() - 53 * 60000).toISOString(), // 53 mins ago
         items: [
             { name: 'Afternoon Tea Service for Two', qty: 1, price: 85.00 },
@@ -171,6 +171,7 @@ async function fetchOrdersFromSupabase() {
 
             return {
                 id: dbOrder.id,
+                tower: dbOrder.tower || '',
                 roomNumber: dbOrder.room_number || dbOrder.roomNumber || 'Unknown Room',
                 phone: dbOrder.phone || '',
                 notes: dbOrder.notes || '',
@@ -199,8 +200,7 @@ async function fetchOrdersFromSupabase() {
 async function updateOrderStatus(orderId, currentStatus) {
     let nextStatus = 'new';
     if (currentStatus === 'new') nextStatus = 'preparing';
-    else if (currentStatus === 'preparing') nextStatus = 'ready';
-    else if (currentStatus === 'ready') nextStatus = 'done';
+    else if (currentStatus === 'preparing') nextStatus = 'done';
     
     if (nextStatus === currentStatus) return;
 
@@ -234,14 +234,79 @@ function calculateTimeAgo(dateString) {
 function getStatusDetails(status) {
     const map = {
         'new': { label: 'NEW', btnLabel: 'Mark as Preparing', btnClass: 'new', icon: 'alert-circle' },
-        'preparing': { label: 'PREPARING', btnLabel: 'Mark as Ready', btnClass: 'preparing', icon: 'check-circle' },
-        'ready': { label: 'READY', btnLabel: 'Mark as Delivered', btnClass: 'ready', icon: 'send' }
+        'preparing': { label: 'PREPARING', btnLabel: 'Mark as Delivered', btnClass: 'preparing', icon: 'send' }
     };
     return map[status.toLowerCase()] || map['new'];
 }
 
+let isFirstLoad = true;
+let previousOrderIds = new Set();
+
+function checkForNewOrders(ordersData) {
+    if (isFirstLoad) {
+        previousOrderIds = new Set(ordersData.map(o => o.id));
+        isFirstLoad = false;
+        return;
+    }
+
+    const currentOrderIds = new Set(ordersData.map(o => o.id));
+    const newOrders = ordersData.filter(o => o.status === 'new' && !previousOrderIds.has(o.id));
+    
+    if (newOrders.length > 0) {
+        triggerNewOrderNotification(newOrders.length);
+    }
+    
+    previousOrderIds = currentOrderIds;
+}
+
+function triggerNewOrderNotification(count) {
+    const soundToggle = document.getElementById('sound-alerts-toggle');
+    const desktopToggle = document.getElementById('desktop-alerts-toggle');
+    
+    if (soundToggle && soundToggle.checked) {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // First heavy beep
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = 'square'; // Heavier sound than sine
+            osc1.frequency.setValueAtTime(350, audioCtx.currentTime); // Lower pitch
+            gain1.gain.setValueAtTime(0.6, audioCtx.currentTime); // Louder
+            
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            
+            osc1.start(audioCtx.currentTime);
+            osc1.stop(audioCtx.currentTime + 0.3);
+            
+            // Second heavy beep
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'square';
+            osc2.frequency.setValueAtTime(350, audioCtx.currentTime + 0.4); 
+            gain2.gain.setValueAtTime(0.6, audioCtx.currentTime + 0.4);
+            
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            
+            osc2.start(audioCtx.currentTime + 0.4);
+            osc2.stop(audioCtx.currentTime + 0.7);
+            
+        } catch (e) {
+            console.log("AudioContext not supported or blocked");
+        }
+    }
+    
+    if (desktopToggle && desktopToggle.checked && Notification.permission === 'granted') {
+        new Notification('Café Fleur: New Order', {
+            body: `You have ${count} new order(s) waiting!`
+        });
+    }
+}
+
 function updateSummaryCounters(orders) {
-    const counts = { new: 0, preparing: 0, ready: 0, done: 0 };
+    const counts = { new: 0, preparing: 0, done: 0 };
     orders.forEach(o => {
         if (counts[o.status] !== undefined) {
             counts[o.status]++;
@@ -251,7 +316,6 @@ function updateSummaryCounters(orders) {
     document.getElementById('active-orders-count').textContent = orders.length;
     document.getElementById('count-new').textContent = counts.new;
     document.getElementById('count-preparing').textContent = counts.preparing;
-    document.getElementById('count-ready').textContent = counts.ready;
     document.getElementById('count-done').textContent = counts.done;
 }
 
@@ -262,6 +326,7 @@ function renderOrders(ordersData) {
 
     container.innerHTML = ''; // Clear existing
     updateSummaryCounters(ordersData);
+    checkForNewOrders(ordersData);
 
     ordersData.forEach(order => {
         const statusDetails = getStatusDetails(order.status);
@@ -271,6 +336,13 @@ function renderOrders(ordersData) {
         article.classList.add(`status-${order.status}`);
         
         // Header
+        const towerEl = cardClone.querySelector('.tower-number');
+        if (order.tower) {
+            towerEl.textContent = `Tower ${order.tower}`;
+            towerEl.style.display = 'block';
+        } else {
+            towerEl.style.display = 'none';
+        }
         cardClone.querySelector('.room-number').textContent = order.roomNumber;
         
         const phoneEl = cardClone.querySelector('.customer-phone');
@@ -464,6 +536,30 @@ function setupSettingsActions() {
     });
     
     settingsEmailInput.value = adminEmail;
+    
+    const desktopToggle = document.getElementById('desktop-alerts-toggle');
+    if (desktopToggle) {
+        if (Notification.permission === 'granted') {
+            desktopToggle.checked = true;
+        } else {
+            desktopToggle.checked = false;
+        }
+        
+        desktopToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                if (Notification.permission === 'denied') {
+                    alert("Desktop notifications are blocked in your browser. Please enable them in your browser settings.");
+                    e.target.checked = false;
+                } else if (Notification.permission !== 'granted') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission !== 'granted') {
+                            e.target.checked = false;
+                        }
+                    });
+                }
+            }
+        });
+    }
 }
 
 // Initialization

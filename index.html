@@ -65,9 +65,9 @@
             </nav>
 
             <div class="user-profile">
-                <img src="https://i.pravatar.cc/150?img=11" alt="Alex Mercer" class="avatar">
+                <img src="https://i.pravatar.cc/150?img=11" alt="Adnan" class="avatar">
                 <div class="user-info">
-                    <p class="user-name">Alex Mercer</p>
+                    <p class="user-name">Adnan</p>
                     <p class="user-role">General Manager</p>
                 </div>
             </div>
@@ -98,7 +98,6 @@
                     <div class="status-summary">
                         <span class="summary-badge new">&bull; NEW: <span id="count-new">0</span></span>
                         <span class="summary-badge preparing">&bull; PREPARING: <span id="count-preparing">0</span></span>
-                        <span class="summary-badge ready">&bull; READY: <span id="count-ready">0</span></span>
                         <span class="summary-badge done">&bull; DONE: <span id="count-done">0</span></span>
                     </div>
                 </div>
@@ -219,7 +218,7 @@
                                         <p>Play a chime when new orders arrive</p>
                                     </div>
                                     <label class="switch">
-                                        <input type="checkbox" checked>
+                                        <input type="checkbox" id="sound-alerts-toggle" checked>
                                         <span class="slider round"></span>
                                     </label>
                                 </div>
@@ -229,7 +228,7 @@
                                         <p>Show browser alerts for system updates</p>
                                     </div>
                                     <label class="switch">
-                                        <input type="checkbox">
+                                        <input type="checkbox" id="desktop-alerts-toggle">
                                         <span class="slider round"></span>
                                     </label>
                                 </div>
@@ -277,6 +276,7 @@
         <article class="order-card">
             <div class="card-header">
                 <div>
+                    <h5 class="tower-number" style="display:none; font-weight:600; margin-bottom:4px;"></h5>
                     <h4 class="room-number"></h4>
                     <span class="customer-phone" style="font-size: 13px; color: var(--text-muted); margin-top: 2px; display: none;"></span>
                 </div>
